@@ -5,5 +5,9 @@ export type ProductType = {
   image: string
   id: string
   description: string | null
-  metadata: Record<string, string>
+  metadata: MetadataType
+}
+
+type MetadataType = {
+  features: string
 }

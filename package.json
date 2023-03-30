@@ -9,12 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@lottiefiles/react-lottie-player": "^3.5.2",
     "@next-auth/prisma-adapter": "^1.0.5",
     "@prisma/client": "^4.11.0",
+    "@stripe/react-stripe-js": "^1.16.5",
     "@stripe/stripe-js": "^1.46.0",
     "@types/node": "18.15.3",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
+    "daisyui": "^2.51.5",
+    "framer-motion": "^10.6.1",
+    "micro": "^10.0.1",
     "next": "13.2.4",
     "prisma": "^4.11.0",
     "react": "18.2.0",
