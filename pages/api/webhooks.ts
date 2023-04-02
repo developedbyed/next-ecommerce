@@ -1,5 +1,5 @@
 import Stripe from "stripe"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/util/prisma"
 import { buffer } from "micro"
 import { NextApiRequest, NextApiResponse } from "next"
 
@@ -12,7 +12,6 @@ export const config = {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2022-11-15",
 })
-const prisma = new PrismaClient()
 
 export default async function handler(
   req: NextApiRequest,
@@ -44,7 +43,7 @@ export default async function handler(
       break
     case "charge.succeeded":
       const charge = event.data.object as Stripe.Charge
-      if (charge.payment_intent) {
+      if (typeof charge.payment_intent === "string") {
         const order = await prisma.order.update({
           where: { paymentIntentID: charge.payment_intent },
           data: { status: "complete" },

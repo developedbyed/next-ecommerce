@@ -1,10 +1,8 @@
 import NextAuth, { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/util/prisma"
 import Stripe from "stripe"
-
-const prisma = new PrismaClient()
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -24,10 +22,11 @@ export const authOptions: NextAuthOptions = {
       //Let's create a stripe customer
 
       const costumer = await stripe.customers.create({
-        email: user.email,
-        name: user.name,
+        email: user.email || undefined,
+        name: user.name || undefined,
       })
       //Also update our prisma user with the stripecustomerid
+
       await prisma.user.update({
         where: { id: user.id },
         data: { stripeCustomerId: costumer.id },
