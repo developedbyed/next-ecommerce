@@ -28,11 +28,11 @@ export default async function handler(
   }
   //Extract the data from the body
   const { items, payment_intent_id } = req.body
-
+  const total = calculateOrderAmount(items)
   //Create the order data
   const orderData = {
     user: { connect: { id: userSession.user?.id } },
-    amount: calculateOrderAmount(items),
+    amount: total,
     currency: "usd",
     status: "pending",
     paymentIntentID: payment_intent_id,
@@ -55,34 +55,35 @@ export default async function handler(
     if (current_intent) {
       const updated_intent = await stripe.paymentIntents.update(
         payment_intent_id,
-        { amount: calculateOrderAmount(items) }
+        { amount: total }
       )
       //Fetch order with product ids
-      const existing_order = await prisma.order.findFirst({
-        where: { paymentIntentID: updated_intent.id },
-        include: { products: true },
-      })
+      const [existing_order, updated_order] = await Promise.all([
+        prisma.order.findFirst({
+          where: { paymentIntentID: updated_intent.id },
+          include: { products: true },
+        }),
+        prisma.order.update({
+          where: { paymentIntentID: updated_intent.id },
+          data: {
+            amount: total,
+            products: {
+              deleteMany: {},
+              create: items.map((item) => ({
+                name: item.name,
+                description: item.description || null,
+                unit_amount: parseFloat(item.unit_amount),
+                image: item.image,
+                quantity: item.quantity,
+              })),
+            },
+          },
+        }),
+      ])
+
       if (!existing_order) {
         res.status(400).json({ message: "Invalid Payment Intent" })
       }
-
-      //Update Existing Order
-      const updated_order = await prisma.order.update({
-        where: { id: existing_order?.id },
-        data: {
-          amount: calculateOrderAmount(items),
-          products: {
-            deleteMany: {},
-            create: items.map((item) => ({
-              name: item.name,
-              description: item.description || null,
-              unit_amount: parseFloat(item.unit_amount),
-              image: item.image,
-              quantity: item.quantity,
-            })),
-          },
-        },
-      })
       res.status(200).json({ paymentIntent: updated_intent })
       return
     }

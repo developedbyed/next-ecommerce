@@ -1,38 +1,36 @@
-import { PrismaClient } from "@prisma/client"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/pages/api/auth/[...nextauth]"
+"use client"
+
 import formatPrice from "@/util/PriceFormat"
 import Image from "next/image"
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
 
-export const revalidate = 0
-
-const fetchOrders = async () => {
-  const prisma = new PrismaClient()
-  const user = await getServerSession(authOptions)
-  if (!user) {
-    return null
+export default function Dashboard() {
+  const [orders, setOrders] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const fetchOrders = async () => {
+    const res = await fetch("/api/get-orders")
+    const data = await res.json()
+    return data
   }
-  const orders = await prisma.order.findMany({
-    where: { userId: user?.user?.id, status: "complete" },
-    include: { products: true },
-  })
-  return orders
-}
-
-export default async function Dashboard() {
-  const orders = await fetchOrders()
-  if (orders === null)
-    return <div>You need to be logged in to view your orders</div>
-  if (orders.length === 0) {
-    return (
-      <div>
-        <h1>No orders placed</h1>
-      </div>
-    )
-  }
+  useEffect(() => {
+    fetchOrders()
+      .then((data) => {
+        setOrders(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError(err)
+        setLoading(false)
+      })
+  }, [])
+  console.log(orders)
+  if (loading) return <p>Loading...</p>
+  if (error) return <p>Error: {error}</p>
   return (
-    <div>
-      <div>
+    <motion.div layout>
+      <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         {orders.map((order) => (
           <div
             key={order.id}
@@ -77,7 +75,7 @@ export default async function Dashboard() {
             </p>
           </div>
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
